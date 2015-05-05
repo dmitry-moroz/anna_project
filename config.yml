@@ -1,0 +1,11 @@
+server:
+  host_name: localhost
+  port: 8080
+
+database:
+  name: database.db
+  table: main
+  drop_existing_db: True
+
+cache:
+  cache_lifetime: 30
