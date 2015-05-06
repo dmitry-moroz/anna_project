@@ -1,5 +1,6 @@
 import yaml
 
+PATH = 'config.yml'
 
 def load_conf(path):
     try:
@@ -8,8 +9,7 @@ def load_conf(path):
     except (yaml.YAMLError, OSError, IOError):
         raise
 
-
-CONFIG = load_conf('config.yml')
+CONFIG = load_conf(PATH)
 cache_conf = CONFIG['cache']
 srv_conf = CONFIG['server']
 db_conf = CONFIG['database']

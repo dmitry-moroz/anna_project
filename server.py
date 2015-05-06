@@ -15,9 +15,10 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     CODING = 'UTF-8'
     PING = u'/'
-    SHELL = u'/shell'
     GET_ALL = u'/get_all'
     RANDOM_FILL = u'/random_fill'
+    INSERT = u'/insert'
+    FORECAST = u'/forecast'
 
     def response(self, code, msg=None):
         """Sends specified return code and provides header.
@@ -31,36 +32,93 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             msg = json.dumps(msg)
             self.wfile.write(msg.encode(self.CODING))
 
-    def run_cmd(self, cmd):
-        """Performs command into subprocess routine and returns stdout,
-        stderr and return code.
-        cmd: target command for performing
-        """
-        cmd = cmd.encode(sys.stdin.encoding)
-        process_cmd = subprocess.Popen(cmd, shell=True,
-                                       stdin=subprocess.PIPE,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
-
-        output, stderr = process_cmd.communicate()
-        return (output.decode(sys.stdout.encoding),
-                stderr.decode(sys.stdout.encoding),
-                process_cmd.returncode)
-
-    def shell(self, cmd):
-        out, err, code = self.run_cmd(cmd)
-        if not code:
-            self.response(200, out)
-        else:
-            self.response(418, out)
-
     def random_fill(self, data):
-        DataBase().insert_random_data(int(data))
+        DataBase().insert_random_data(rows=data.get(u'rows', 1),
+                                      goods=data.get(u'goods', 50),
+                                      max_count=data.get(u'max_count', 5),
+                                      min_date=data.get(u'min_date', -31536000),
+                                      code_len=data.get(u'code_len', 20))
+        self.response(200)
+
+    def insert(self, data):
+        DataBase().insert_data(data[u'code'], data[u'date'], data[u'count'])
         self.response(200)
 
     def get_all(self):
         result = DataBase().get_data()
         self.response(200, result)
+
+    def forecast(self, data):
+        """
+        data:
+        f_type: y, m, w
+        """
+        goods_code = data.get(u'code', None)
+        f_type = data.get(u'f_type', 'm')
+        s_date = data.get(u's_date', None)
+        f_date = data.get(u'f_date', time.time())
+
+        if goods_code is None:
+            json_data = {u'error': u'Good\'s code is not specified'}
+            self.response(418, json_data)
+            return False
+
+        records = DataBase().get_data(code=goods_code, date=s_date)
+        #NO sales error
+        records = sorted(records, key=lambda r: r[1])
+
+        f_year = time.gmtime(f_date).tm_year
+        f_mon = time.gmtime(f_date).tm_mon
+        f_day = time.gmtime(f_date).tm_yday
+        periods = {}
+
+        if f_type == u'y':
+            for y in xrange(time.gmtime(records[0][1]).tm_year, f_year + 1):
+                period = 0
+                for r in records:
+                    if time.gmtime(r[1]).tm_year == y:
+                        period += r[2]
+                periods.update({str(y): period})
+
+        elif f_type == u'm':
+            for y in xrange(time.gmtime(records[0][1]).tm_year, f_year + 1):
+                x = f_mon if y == f_year else 12
+                for m in xrange(1, x + 1):
+                    period = 0
+                    for r in records:
+                        if time.gmtime(r[1]).tm_year == y and time.gmtime(r[1]).tm_mon == m:
+                            period += r[2]
+                    periods.update({'.'.join([str(y), str(m)]): period})
+
+        elif f_type == u'w':
+            for y in xrange(time.gmtime(records[0][1]).tm_year, f_year + 1):
+                weeks = []
+                for i in range(1, 367)[::7]:
+                    weeks.append(range(1, 367)[i - 1:i + 6])
+                for w in xrange(0, len(weeks)):
+                    if y == f_year and f_day in weeks[w - 1]:
+                        break
+                    period = 0
+                    for r in records:
+                        if time.gmtime(r[1]).tm_year == y and time.gmtime(r[1]).tm_yday in weeks[w]:
+                            period += r[2]
+                    periods.update({'.'.join([str(y), str(w)]): period})
+
+
+
+        alphas = map(lambda x: float(x)/100, range(5, 31, 5))
+        best_mad = None
+        best_forecasts = None
+        for a in alphas:
+            forecasts = []
+            for i in xrange(len(records) + 1):
+                if i == 0:
+                    continue
+                elif i == 1:
+                    pass
+
+
+
 
     def do_GET(self):
         """Respond to a GET request.
@@ -68,14 +126,11 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         request = urllib.unquote(self.path).decode('UTF-8')
         try:
             request = urlparse(request)
-            data = request.params
-            #data = json.loads(request.params) if request.params else ''
+            #data = request.params
+            data = json.loads(request.params) if request.params else {}
 
-            if request.path == self.SHELL:
-                self.shell(data)
-
-            elif request.path == self.PING:
-                json_data = {'info': 'Forecasting server is running'}
+            if request.path == self.PING:
+                json_data = {u'info': u'Forecasting server is running'}
                 self.response(200, json_data)
 
             elif request.path == self.GET_ALL:
@@ -83,6 +138,12 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             elif request.path == self.RANDOM_FILL:
                 self.random_fill(data)
+
+            elif request.path == self.INSERT:
+                self.insert(data)
+
+            elif request.path == self.FORECAST:
+                self.forecast(data)
 
             else:
                 self.response(404)

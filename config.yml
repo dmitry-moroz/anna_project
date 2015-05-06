@@ -1,5 +1,5 @@
 server:
-  host_name: localhost
+  host_name: 192.168.8.101
   port: 8080
 
 database:
@@ -8,4 +8,5 @@ database:
   drop_existing_db: True
 
 cache:
-  cache_lifetime: 30
+  enable_cache: True
+  cache_lifetime: 60
