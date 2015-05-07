@@ -1,7 +1,6 @@
 import string
 import sqlite3
 import random
-import json
 import time
 from cache_meta import CacheMeta
 from config import db_conf, cache_conf

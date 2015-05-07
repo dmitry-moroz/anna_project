@@ -8,5 +8,5 @@ database:
   drop_existing_db: True
 
 cache:
-  enable_cache: True
+  enable_cache: False
   cache_lifetime: 60

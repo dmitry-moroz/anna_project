@@ -4,7 +4,6 @@ import json
 import BaseHTTPServer
 from urlparse import urlparse
 from SocketServer import ThreadingMixIn
-from db_worker import DataBase
 from config import srv_conf, db_conf
 
 
@@ -180,6 +179,8 @@ class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
 
 # Main program starting
 if __name__ == '__main__':
+    from db_worker import DataBase
+
     httpd = ThreadedHTTPServer((srv_conf['host_name'], srv_conf['port']),
                                MyHandler)
     print "[{2}] Server Starts - {0}:{1}".format(
