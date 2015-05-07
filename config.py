@@ -3,6 +3,10 @@ import yaml
 PATH = 'config.yml'
 
 def load_conf(path):
+    """Loads yml config file.
+
+    path: path to target config
+    """
     try:
         with open(path) as conf_file:
             return yaml.load(conf_file)

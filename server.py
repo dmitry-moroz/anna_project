@@ -1,7 +1,4 @@
 import time
-import subprocess
-import sys
-import string
 import urllib
 import json
 import BaseHTTPServer
@@ -22,7 +19,9 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def response(self, code, msg=None):
         """Sends specified return code and provides header.
-        code: return code for sending
+
+        code: return code to send
+        msg: json data to send
         """
         self.send_response(code)
         self.send_header("Content-type",
@@ -33,6 +32,10 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.wfile.write(msg.encode(self.CODING))
 
     def random_fill(self, data):
+        """Fills database with random data.
+
+        data: json data with parameters for random filling
+        """
         DataBase().insert_random_data(rows=data.get(u'rows', 1),
                                       goods=data.get(u'goods', 50),
                                       max_count=data.get(u'max_count', 5),
@@ -41,17 +44,66 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.response(200)
 
     def insert(self, data):
+        """Inserts specified record to database.
+
+        data: json data with parameters of record for inserting
+        """
         DataBase().insert_data(data[u'code'], data[u'date'], data[u'count'])
         self.response(200)
 
     def get_all(self):
+        """Returns all records from database."""
         result = DataBase().get_data()
         self.response(200, result)
 
-    def forecast(self, data):
+    def get_periods(self, records, f_date, f_type):
+        """Divides records to periods according to type of period.
+
+        records: all records to divide
+        f_date: last date of periods
+        f_type: type of period to divide ('y'-year, 'm'-month, 'w'-week)
         """
-        data:
-        f_type: y, m, w
+        f_year = time.gmtime(f_date).tm_year
+        f_mon = time.gmtime(f_date).tm_mon
+        f_week = int(time.strftime("%U", time.gmtime(f_date)))
+
+        periods = []
+
+        if f_type == u'y':
+            for y in xrange(time.gmtime(records[0][1]).tm_year, f_year + 1):
+                period = 0
+                for r in records:
+                    if time.gmtime(r[1]).tm_year == y:
+                        period += r[2]
+                periods.append(float(period))
+
+        elif f_type == u'm':
+            for y in xrange(time.gmtime(records[0][1]).tm_year, f_year + 1):
+                x = f_mon if y == f_year else 12
+                for m in xrange(1, x + 1):
+                    period = 0
+                    for r in records:
+                        if time.gmtime(r[1]).tm_year == y and time.gmtime(r[1]).tm_mon == m:
+                            period += r[2]
+                    periods.append(float(period))
+
+        elif f_type == u'w':
+            for y in xrange(time.gmtime(records[0][1]).tm_year, f_year + 1):
+                yw = int(time.strftime("%U", time.strptime("31 Dec {0}".format(y), "%d %b %Y")))
+                x = f_week if y == f_year else yw
+                for w in xrange(0, x + 1):
+                    period = 0
+                    for r in records:
+                        if time.gmtime(r[1]).tm_year == y and int(time.strftime("%U", time.gmtime(r[1]))) == w:
+                            period += r[2]
+                    periods.append(float(period))
+
+        return periods
+
+    def forecast(self, data):
+        """Provides forecast for next period.
+
+        data: json data with parameters for forecasting
         """
         goods_code = data.get(u'code', None)
         f_type = data.get(u'f_type', 'm')
@@ -64,69 +116,41 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return False
 
         records = DataBase().get_data(code=goods_code, date=s_date)
-        #NO sales error
         records = sorted(records, key=lambda r: r[1])
-
-        f_year = time.gmtime(f_date).tm_year
-        f_mon = time.gmtime(f_date).tm_mon
-        f_day = time.gmtime(f_date).tm_yday
-        periods = {}
-
-        if f_type == u'y':
-            for y in xrange(time.gmtime(records[0][1]).tm_year, f_year + 1):
-                period = 0
-                for r in records:
-                    if time.gmtime(r[1]).tm_year == y:
-                        period += r[2]
-                periods.update({str(y): period})
-
-        elif f_type == u'm':
-            for y in xrange(time.gmtime(records[0][1]).tm_year, f_year + 1):
-                x = f_mon if y == f_year else 12
-                for m in xrange(1, x + 1):
-                    period = 0
-                    for r in records:
-                        if time.gmtime(r[1]).tm_year == y and time.gmtime(r[1]).tm_mon == m:
-                            period += r[2]
-                    periods.update({'.'.join([str(y), str(m)]): period})
-
-        elif f_type == u'w':
-            for y in xrange(time.gmtime(records[0][1]).tm_year, f_year + 1):
-                weeks = []
-                for i in range(1, 367)[::7]:
-                    weeks.append(range(1, 367)[i - 1:i + 6])
-                for w in xrange(0, len(weeks)):
-                    if y == f_year and f_day in weeks[w - 1]:
-                        break
-                    period = 0
-                    for r in records:
-                        if time.gmtime(r[1]).tm_year == y and time.gmtime(r[1]).tm_yday in weeks[w]:
-                            period += r[2]
-                    periods.update({'.'.join([str(y), str(w)]): period})
-
-
+        periods = self.get_periods(records, f_date, f_type)
 
         alphas = map(lambda x: float(x)/100, range(5, 31, 5))
         best_mad = None
         best_forecasts = None
         for a in alphas:
             forecasts = []
-            for i in xrange(len(records) + 1):
+            for i in xrange(len(periods)):
                 if i == 0:
                     continue
                 elif i == 1:
-                    pass
+                    forecasts.append(periods[i - 1])
+                else:
+                    f = (1 - a)*periods[i - 1] + a*forecasts[-1]
+                    forecasts.append(f)
+            mad = 0
+            for p, f in zip(periods[1:], forecasts):
+                mad += abs(p - f)
+            mad = mad/len(forecasts)
+            if best_mad is None or mad < best_mad:
+                best_mad = mad
+                best_forecasts = forecasts
 
-
-
+        j_data = {'code': goods_code, 'f_type': f_type,
+                  's_date': s_date, 'f_date': f_date,
+                  'periods': periods, 'forecasts': best_forecasts,
+                  'mad': best_mad, 'forecast': best_forecasts[-1]}
+        self.response(200, j_data)
 
     def do_GET(self):
-        """Respond to a GET request.
-        """
+        """Respond to a GET request."""
         request = urllib.unquote(self.path).decode('UTF-8')
         try:
             request = urlparse(request)
-            #data = request.params
             data = json.loads(request.params) if request.params else {}
 
             if request.path == self.PING:
@@ -152,10 +176,9 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 
 class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
-    """Handle requests in a separate thread.
-    """
+    """Handle requests in a separate thread."""
 
-
+# Main program starting
 if __name__ == '__main__':
     httpd = ThreadedHTTPServer((srv_conf['host_name'], srv_conf['port']),
                                MyHandler)

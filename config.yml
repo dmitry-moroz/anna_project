@@ -1,5 +1,5 @@
 server:
-  host_name: 192.168.8.101
+  host_name: localhost
   port: 8080
 
 database:
