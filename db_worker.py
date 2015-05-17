@@ -1,5 +1,5 @@
 import string
-import sqlite3
+import MySQLdb
 import random
 import time
 from cache_meta import CacheMeta
@@ -13,6 +13,9 @@ class DataBase(object):
 
     db_name = db_conf['name']
     table = db_conf['table']
+    host = db_conf['host']
+    user = db_conf['user']
+    pswd = db_conf['password']
 
     def __init__(self):
         self._connection = None
@@ -25,7 +28,12 @@ class DataBase(object):
     @property
     def connection(self):
         if not self._connection:
-            self._connection = sqlite3.connect(self.db_name)
+            self._connection = MySQLdb.connect(
+                host=self.host,
+                user=self.user,
+                passwd=self.pswd,
+                db=self.db_name
+            )
         return self._connection
 
     @property
@@ -71,13 +79,9 @@ class DataBase(object):
         return result
 
     def prepare_table(self):
-        self.cursor.execute('SELECT tbl_name FROM sqlite_master '
-                            'WHERE type="table"')
-        if self.table in str(self.cursor.fetchall()):
-            self.cursor.execute('DROP TABLE {0}'.format(self.table))
-            self.connection.commit()
+        self.cursor.execute("DROP TABLE IF EXISTS {0}".format(self.table))
         self.cursor.execute('CREATE TABLE {0} '
-                            '(code VARCHAR(32), '
-                            'date INTEGER, '
-                            'count INTEGER)'.format(self.table))
+                            '(code CHAR(64), '
+                            'date INT, '
+                            'count INT)'.format(self.table))
         self.connection.commit()
