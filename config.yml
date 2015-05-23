@@ -8,7 +8,7 @@ database:
   password: password
   name: store
   table: orders
-  drop_existing_db: True
+  drop_existing_db: False
 
 cache:
   enable_cache: False

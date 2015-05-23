@@ -45,7 +45,7 @@ class DataBase(object):
     def insert_data(self, n_code, n_date, n_count):
         self.cursor.execute(
             'INSERT INTO {3} '
-            '(code, date, count) '
+            '(name, amount, date) '
             'VALUES("{0}", {1}, {2})'
             .format(n_code, n_date, n_count, self.table)
         )
@@ -63,14 +63,15 @@ class DataBase(object):
             r_count = random.randint(1, max_count)
             self.cursor.execute(
                 'INSERT INTO {3} '
-                '(code, date, count) '
+                '(name, amount, date) '
                 'VALUES("{0}", {1}, {2})'
                 .format(r_code, r_date, r_count, self.table)
             )
         self.connection.commit()
 
     def get_data(self, code=None, date=None):
-        self.cursor.execute('SELECT * FROM {0}'.format(self.table))
+        self.cursor.execute('SELECT name, amount, date FROM {0}'
+                            .format(self.table))
         result = self.cursor.fetchall()
         if date:
             result = filter(lambda r: r[1] > date, result)
@@ -80,8 +81,11 @@ class DataBase(object):
 
     def prepare_table(self):
         self.cursor.execute("DROP TABLE IF EXISTS {0}".format(self.table))
+        self.connection.commit()
         self.cursor.execute('CREATE TABLE {0} '
-                            '(code CHAR(64), '
-                            'date INT, '
-                            'count INT)'.format(self.table))
+                            '(store_id INT NOT NULL AUTO_INCREMENT, '
+                            'name CHAR(64) NOT NULL, '
+                            'amount INT NOT NULL, '
+                            'date INT NOT NULL,'
+                            'PRIMARY KEY (store_id))'.format(self.table))
         self.connection.commit()
