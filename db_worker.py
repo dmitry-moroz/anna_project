@@ -47,7 +47,7 @@ class DataBase(object):
             'INSERT INTO {3} '
             '(name, amount, date) '
             'VALUES("{0}", {1}, {2})'
-            .format(n_code, n_date, n_count, self.table)
+            .format(n_code, n_count, n_date, self.table)
         )
         self.connection.commit()
 
@@ -65,7 +65,7 @@ class DataBase(object):
                 'INSERT INTO {3} '
                 '(name, amount, date) '
                 'VALUES("{0}", {1}, {2})'
-                .format(r_code, r_date, r_count, self.table)
+                .format(r_code, r_count, r_date, self.table)
             )
         self.connection.commit()
 
