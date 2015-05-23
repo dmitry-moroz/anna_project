@@ -45,9 +45,9 @@ class DataBase(object):
     def insert_data(self, n_code, n_date, n_count):
         self.cursor.execute(
             'INSERT INTO {3} '
-            '(name, amount, date) '
+            '(name, date, amount) '
             'VALUES("{0}", {1}, {2})'
-            .format(n_code, n_count, n_date, self.table)
+            .format(n_code, n_date, n_count, self.table)
         )
         self.connection.commit()
 
@@ -63,14 +63,14 @@ class DataBase(object):
             r_count = random.randint(1, max_count)
             self.cursor.execute(
                 'INSERT INTO {3} '
-                '(name, amount, date) '
+                '(name, date, amount) '
                 'VALUES("{0}", {1}, {2})'
-                .format(r_code, r_count, r_date, self.table)
+                .format(r_code, r_date, r_count, self.table)
             )
         self.connection.commit()
 
     def get_data(self, code=None, date=None):
-        self.cursor.execute('SELECT name, amount, date FROM {0}'
+        self.cursor.execute('SELECT name, date, amount FROM {0}'
                             .format(self.table))
         result = self.cursor.fetchall()
         if date:
@@ -85,7 +85,7 @@ class DataBase(object):
         self.cursor.execute('CREATE TABLE {0} '
                             '(store_id INT NOT NULL AUTO_INCREMENT, '
                             'name CHAR(64) NOT NULL, '
-                            'amount INT NOT NULL, '
                             'date INT NOT NULL,'
+                            'amount INT NOT NULL, '
                             'PRIMARY KEY (store_id))'.format(self.table))
         self.connection.commit()
