@@ -51,14 +51,9 @@ class DataBase(object):
         )
         self.connection.commit()
 
-    def insert_random_data(self, rows=200, goods=50, max_count=5,
-                           min_date=-31536000, code_len=20):
-        codes = []
-        for g in xrange(goods):
-            codes.append(''.join(random.choice(string.hexdigits)
-                                 for i in xrange(code_len)))
+    def insert_random_data(self, rows, goods, max_count, min_date):
         for i in xrange(rows):
-            r_code = random.choice(codes)
+            r_code = random.choice(goods)
             r_date = time.time() + random.randint(min_date, 0)
             r_count = random.randint(1, max_count)
             self.cursor.execute(

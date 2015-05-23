@@ -35,11 +35,11 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         data: json data with parameters for random filling
         """
-        DataBase().insert_random_data(rows=data.get(u'rows', 1),
-                                      goods=data.get(u'goods', 50),
-                                      max_count=data.get(u'max_count', 5),
-                                      min_date=data.get(u'min_date', -31536000),
-                                      code_len=data.get(u'code_len', 20))
+        DataBase().insert_random_data(
+            rows=data.get(u'rows', 1),
+            goods=data.get(u'goods', ['default_name']),
+            max_count=data.get(u'max_count', 5),
+            min_date=data.get(u'min_date', -31536000))
         self.response(200)
 
     def insert(self, data):
