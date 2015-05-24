@@ -14,6 +14,5 @@ def load_conf(path):
         raise
 
 CONFIG = load_conf(PATH)
-cache_conf = CONFIG['cache']
 srv_conf = CONFIG['server']
 db_conf = CONFIG['database']

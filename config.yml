@@ -9,7 +9,3 @@ database:
   name: store
   table: orders
   drop_existing_db: False
-
-cache:
-  enable_cache: False
-  cache_lifetime: 60

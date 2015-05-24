@@ -1,15 +1,10 @@
-import string
 import MySQLdb
 import random
 import time
-from cache_meta import CacheMeta
-from config import db_conf, cache_conf
+from config import db_conf
 
 
 class DataBase(object):
-
-    if cache_conf['enable_cache']:
-        __metaclass__ = CacheMeta
 
     db_name = db_conf['name']
     table = db_conf['table']
