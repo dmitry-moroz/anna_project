@@ -38,7 +38,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         DataBase().insert_random_data(
             rows=data.get(u'rows', 1),
             goods=data.get(u'goods', ['default_name']),
-            max_count=data.get(u'max_count', 5),
+            max_count=data.get(u'max_count', 10),
             min_date=data.get(u'min_date', -31536000))
         self.response(200)
 
@@ -106,7 +106,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """
         goods_code = data.get(u'code', None)
         f_type = data.get(u'f_type', 'm')
-        s_date = data.get(u's_date', None)
+        s_date = data.get(u's_date', 0)
         f_date = data.get(u'f_date', time.time())
 
         if goods_code is None:

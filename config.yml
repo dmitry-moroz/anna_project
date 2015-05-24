@@ -1,9 +1,9 @@
 server:
-  host_name: localhost
+  host_name: 127.0.0.1
   port: 8080
 
 database:
-  host: localhost
+  host: 127.0.0.1
   user: root
   password: password
   name: store

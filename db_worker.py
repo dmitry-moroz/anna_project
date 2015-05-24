@@ -59,14 +59,13 @@ class DataBase(object):
             )
         self.connection.commit()
 
-    def get_data(self, code=None, date=None):
-        self.cursor.execute('SELECT name, date, amount FROM {0}'
-                            .format(self.table))
+    def get_data(self, code=None, date=0):
+        condition = 'WHERE date>{0}'.format(date)
+        if code is not None:
+            condition += ' AND name="{0}"'.format(code)
+        self.cursor.execute('SELECT name, date, amount FROM {0} {1}'
+                            .format(self.table, condition))
         result = self.cursor.fetchall()
-        if date:
-            result = filter(lambda r: r[1] > date, result)
-        if code:
-            result = filter(lambda r: r[0] == code, result)
         return result
 
     def prepare_table(self):
