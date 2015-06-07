@@ -123,7 +123,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         records = DataBase().get_data(code=goods_code, date=s_date)
         records = sorted(records, key=lambda r: r[1])
-        periods = self.get_periods(records, f_date, f_type)
+        periods = self.get_periods(records, s_date, f_date, f_type)
 
         alphas = map(lambda x: float(x)/100, range(5, 31, 5))
         best_mad = None
