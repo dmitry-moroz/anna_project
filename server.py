@@ -55,13 +55,18 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         result = DataBase().get_data()
         self.response(200, result)
 
-    def get_periods(self, records, f_date, f_type):
+    def get_periods(self, records, s_date, f_date, f_type):
         """Divides records to periods according to type of period.
 
         records: all records to divide
+        s_date: first date of periods
         f_date: last date of periods
         f_type: type of period to divide ('y'-year, 'm'-month, 'w'-week)
         """
+        s_year = time.gmtime(s_date).tm_year
+        s_mon = time.gmtime(s_date).tm_mon
+        s_week = int(time.strftime("%U", time.gmtime(s_date)))
+
         f_year = time.gmtime(f_date).tm_year
         f_mon = time.gmtime(f_date).tm_mon
         f_week = int(time.strftime("%U", time.gmtime(f_date)))
@@ -69,7 +74,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         periods = []
 
         if f_type == u'y':
-            for y in xrange(time.gmtime(records[0][1]).tm_year, f_year + 1):
+            for y in xrange(s_year, f_year + 1):
                 period = 0
                 for r in records:
                     if time.gmtime(r[1]).tm_year == y:
@@ -77,9 +82,10 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 periods.append(float(period))
 
         elif f_type == u'm':
-            for y in xrange(time.gmtime(records[0][1]).tm_year, f_year + 1):
-                x = f_mon if y == f_year else 12
-                for m in xrange(1, x + 1):
+            for y in xrange(s_year, f_year + 1):
+                x1 = s_mon if y == s_year else 1
+                x2 = f_mon if y == f_year else 12
+                for m in xrange(x1, x2 + 1):
                     period = 0
                     for r in records:
                         if time.gmtime(r[1]).tm_year == y and time.gmtime(r[1]).tm_mon == m:
@@ -87,10 +93,11 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     periods.append(float(period))
 
         elif f_type == u'w':
-            for y in xrange(time.gmtime(records[0][1]).tm_year, f_year + 1):
+            for y in xrange(s_year, f_year + 1):
                 yw = int(time.strftime("%U", time.strptime("31 Dec {0}".format(y), "%d %b %Y")))
-                x = f_week if y == f_year else yw
-                for w in xrange(0, x + 1):
+                x1 = s_week if y == s_year else 0
+                x2 = f_week if y == f_year else yw
+                for w in xrange(x1, x2 + 1):
                     period = 0
                     for r in records:
                         if time.gmtime(r[1]).tm_year == y and int(time.strftime("%U", time.gmtime(r[1]))) == w:
